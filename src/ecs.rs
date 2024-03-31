@@ -65,6 +65,7 @@ pub enum ComponentType {
     Sprite,
     Movement,
     Stats,
+    MovementInput,
 }
 
 #[derive(Debug)]
@@ -74,6 +75,7 @@ pub enum Component {
     Sprite(SpriteCmp),
     Movement(MovementCmp),
     Stats(StatCmp),
+    MovementInput(MovmentInputCmp),
 }
 
 /* Component Data */
@@ -122,6 +124,9 @@ pub struct StatCmp { // 164 Byte
 }
 
 #[derive(Debug)]
+pub struct MovmentInputCmp;
+
+#[derive(Debug)]
 pub enum Race {
     NONE,
     HUMAN,
@@ -136,9 +141,36 @@ pub struct RaceCmp {
     pub race: Race,
 }
 
-pub struct ClassCmp {}
+pub enum Class {
+    ARCHER,
+        // ARCHER subtypes
+    WARRIOR,
+    MAGE,
+    ROUGUE,
+}
 
-pub struct ProfessionCmp {}
+pub struct ClassCmp {
+    pub level: u32,
+    pub xp: f64,
+    pub class: Class,
+}
+
+pub enum Profession {
+    SMITH,
+    BUILDER,
+    MERCHANT,
+    FARMER,
+    FORESTER,
+
+    ALCHEMIST,
+
+}
+
+pub struct ProfessionCmp {
+    pub name: String,
+    pub level: u32,
+    pub xp: f64,
+    pub profession: Profession,}
 
 /* Systems (temporary solutions) */
 
@@ -211,3 +243,6 @@ pub fn movement_system(components: &mut HashMap<ComponentType, Component>) {
     }
 }
 
+fn movment_input_system(components: &mut HashMap<ComponentType, Component>) {
+    // TODO: implement movement input
+}

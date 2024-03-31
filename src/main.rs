@@ -20,11 +20,12 @@ fn main() {
         world.add_component(entity, ComponentType::Movement, Component::Movement(MovementCmp{dir:[1.0, 1.0]})); // Move to bottom left
     }
 
+    world.add_component(Entity(0), ComponentType::MovementInput, Component::MovementInput(MovmentInputCmp{}));
+
     // Initialise RayLib
     let (mut rl, thread) = raylib::init()
         .size(800, 600)
         .title("Game")
-        .vsync()
         .build();
 
     while !rl.window_should_close() {
