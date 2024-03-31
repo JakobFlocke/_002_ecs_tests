@@ -1,5 +1,5 @@
 mod ecs;
-use ecs::{Transform, *};
+use ecs::{TransformCmp, *};
 
 use raylib::prelude::*;
 
@@ -7,23 +7,24 @@ fn main() {
 
     // initialise the ECS
     let mut world = World::new();
-    let entity1 = world.add_entity();
-    world.add_component(entity1, Component::Rectangle(Rect { w: 100.0, h: 50.0 }));
-    world.add_component(entity1, Component::Health(Health(100.0)));
 
-    let entity2 = world.add_entity();
-    world.add_component(entity2, Component::Rectangle(Rect{ w:50.0, h: 100.0 }));
-    world.add_component(entity2, Component::Transform(Transform{ 
-        pos: [10.0, 10.0],
-        rot: [10.0, 10.0],
-        scale: [10.0, 10.0],
-     }));
+    // Add 10000 entities similar to entity2
+    for _ in 0..10000 {
+        let entity = world.add_entity();
+        world.add_component(entity, ComponentType::Shape, Component::Shape(ShapeCmp::Square(100, Color::WHITE)));
+        world.add_component(entity, ComponentType::Transform, Component::Transform(TransformCmp{ 
+            pos: [10.0, 10.0], // Bottom-left corner
+            rot: [0.0, 0.0],
+            scale: [10.0, 10.0],
+        }));
+        world.add_component(entity, ComponentType::Movement, Component::Movement(MovementCmp{dir:[1.0, 1.0]})); // Move to bottom left
+    }
 
-    // initialise RayLib
+    // Initialise RayLib
     let (mut rl, thread) = raylib::init()
         .size(800, 600)
         .title("Game")
-        // .vsync()
+        .vsync()
         .build();
 
     while !rl.window_should_close() {
@@ -33,9 +34,9 @@ fn main() {
         d.clear_background(Color::BLACK);
         d.draw_text("Hello World with RayLib in Rust!", 10, 10, 24, Color::RAYWHITE);
         
-        d.draw_fps(100, 100);
+        d.draw_fps(300, 100);
 
-        // run Systems
+        // Run Systems
         world.run_systems(&mut d);
     }
 }
