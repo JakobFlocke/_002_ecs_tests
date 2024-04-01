@@ -35,17 +35,22 @@ impl World {
     
     
 
-    pub fn run_systems(&mut self, d: &mut RaylibDrawHandle<'_>) {
+    pub fn run_systems(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
 
         for mut components in &mut self.entities {
+            if components.contains_key(&ComponentType::Input) {
+                input_system(&mut components, &rl);
+            }
+
             if let Some(movement_component) = components.get_mut(&ComponentType::Movement) {
                 movement_system(&mut components);
             }
             
             if components.contains_key(&ComponentType::Shape) || components.contains_key(&ComponentType::Sprite) {
                 // Run the render system for entities with Shape or Sprite components
-                render_system(components, d);
+                render_system(components, rl, thread);
             }
+
         }
         
     }
@@ -65,7 +70,7 @@ pub enum ComponentType {
     Sprite,
     Movement,
     Stats,
-    MovementInput,
+    Input,
 }
 
 #[derive(Debug)]
@@ -75,7 +80,7 @@ pub enum Component {
     Sprite(SpriteCmp),
     Movement(MovementCmp),
     Stats(StatCmp),
-    MovementInput(MovmentInputCmp),
+    Input(InputCmp),
 }
 
 /* Component Data */
@@ -123,8 +128,15 @@ pub struct StatCmp { // 164 Byte
     pub curr_status: [f64;3],   // current status (hp, sp, mp)
 }
 
+
+pub const MOVEMENT_INPUT: u8    = 1 << 0;
+const COMBAT_INPUT: u8      = 1 << 1;
+const MENU_INPUT: u8        = 1 << 2;
+
 #[derive(Debug)]
-pub struct MovmentInputCmp;
+pub struct InputCmp {
+    pub mask: u8,   // input mask
+}
 
 #[derive(Debug)]
 pub enum Race {
@@ -174,7 +186,18 @@ pub struct ProfessionCmp {
 
 /* Systems (temporary solutions) */
 
-pub fn render_system(components: &mut HashMap<ComponentType, Component>, d: &mut RaylibDrawHandle<'_>) {
+pub fn render_system(components: &mut HashMap<ComponentType, Component>, rl: &mut RaylibHandle, thread: &RaylibThread) {
+
+    // Begin drawing
+    let mut d = rl.begin_drawing(&thread);
+
+     // Render
+     d.clear_background(Color::BLACK);
+     d.draw_text("Hello World with RayLib in Rust!", 10, 10, 24, Color::RAYWHITE);
+     d.draw_fps(300, 100);
+
+
+    
     // Render system for Shape component
     if let Some(Component::Shape(shape)) = components.get(&ComponentType::Shape) {
         // Check if there is a Transform component
@@ -238,11 +261,35 @@ pub fn movement_system(components: &mut HashMap<ComponentType, Component>) {
 
     // Apply movement using normalized dir vector and speed
     if let Some(Component::Transform(tf)) = components.get_mut(&ComponentType::Transform) {
-        tf.pos[0] += dir[0] * (speed as f32) * 0.01; // Adjust position based on direction and speed
-        tf.pos[1] += dir[1] * (speed as f32) * 0.01; // Adjust position based on direction and speed
+        tf.pos[0] += dir[0] * (speed as f32) * 0.1; // Adjust position based on direction and speed
+        tf.pos[1] += dir[1] * (speed as f32) * 0.1; // Adjust position based on direction and speed
     }
 }
 
-fn movment_input_system(components: &mut HashMap<ComponentType, Component>) {
+fn input_system(components: &mut HashMap<ComponentType, Component>, rl: &RaylibHandle) {
     // TODO: implement movement input
+    let mut mask: u8 = 0;
+    if let Some(Component::Input(input)) = components.get(&ComponentType::Input) {
+        mask = input.mask;
+    }
+
+    let mut dir = [0.0, 0.0];
+    if (mask & MOVEMENT_INPUT) != 0 && components.contains_key(&ComponentType::Movement) {
+        if rl.is_key_down(KeyboardKey::KEY_W) {
+            dir[1] -= 1.0; // Subtract 1 from dir[1]
+        }
+        if rl.is_key_down(KeyboardKey::KEY_A) {
+            dir[0] -= 1.0; // Subtract 1 from dir[0]
+        }
+        if rl.is_key_down(KeyboardKey::KEY_S) {
+            dir[1] += 1.0; // Add 1 to dir[1]
+        }
+        if rl.is_key_down(KeyboardKey::KEY_D) {
+            dir[0] += 1.0; // Add 1 to dir[0]
+        }
+    }
+    if let Some(Component::Movement(mov)) = components.get_mut(&ComponentType::Movement) {
+        // Modify the MovementComponent in place
+        mov.dir = dir;
+    }
 }
